@@ -9,6 +9,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -29,7 +30,7 @@ public class Watson {
 		
 		BufferedWriter writer;
 		try {
-			writer = new BufferedWriter(new FileWriter("resources/output/category_query_stemming.txt"));
+			writer = new BufferedWriter(new FileWriter("resources/output/tfidf_cateogry_query_none.txt"));
 		} catch (IOException e) {
 			e.printStackTrace();
 			return;
@@ -92,6 +93,7 @@ public class Watson {
 		
 		IndexReader reader = DirectoryReader.open(index.getIndex());
 		IndexSearcher searcher = new IndexSearcher(reader);
+		searcher.setSimilarity(new ClassicSimilarity());
 		mpr.setSearcher(searcher);
 		TopDocs docs = searcher.search(q, 100);
 		ScoreDoc[] hits = docs.scoreDocs;

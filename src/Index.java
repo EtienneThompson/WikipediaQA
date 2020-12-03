@@ -14,6 +14,8 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.TFIDFSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 
@@ -28,7 +30,7 @@ public class Index {
 	private IndexWriter writer;
 	
 	public Index(String inputType) {
-		this.analyzer = new EnglishAnalyzer();
+		this.analyzer = new StandardAnalyzer();
 		this.index = new RAMDirectory();
 		this.buildIndex(inputType);
 	}
@@ -47,6 +49,7 @@ public class Index {
 	
 	private void buildIndex(String inputType) {
 		IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
+		config.setSimilarity(new ClassicSimilarity());
 		
 		try {
 			this.writer = new IndexWriter(this.index, config);
