@@ -1,111 +1,64 @@
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Scanner;
-
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.similarities.ClassicSimilarity;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.queryparser.classic.ParseException;
-
 public class Watson {
+	private static boolean category = true;
+	private static String inputDirectory = "regular";
+	private static String method = "stem";
+	private static boolean bm25 = true;
+	private static boolean methodSet = false;
 
 	public static void main(String[] args) {
-		Index index = new Index(args[0]);
-		Scanner input;
-		try {
-			input = new Scanner(new File ("resources/queries/questions.txt"));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+		boolean valid = argparse(args);
+		if (!valid) {
+			System.out.println("Usage: watson [-h|--help] [--lemma|--none] [--tfidf] [--no-cateogry]");
 			return;
 		}
-		
-		BufferedWriter writer;
-		try {
-			writer = new BufferedWriter(new FileWriter("resources/output/tfidf_cateogry_query_none.txt"));
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-		int score = 0;
-		MeanReciprocalRank mpr = new MeanReciprocalRank();
-		while (input.hasNextLine()) {
-			// Read in the 4 lines given to each query.
-			String category = input.nextLine();
-			String q = input.nextLine();
-			String answer = input.nextLine();
-			// Consume the newline.
-			input.nextLine();
-			
-			try {
-				String result = query(category, q, index, writer, mpr, answer);
-				System.out.println("Result: " + result + " Answer: " + answer);
-				if (result.equals(answer)) {
-					score += 1;
+		Index index = new Index(method, inputDirectory, bm25);
+		QueryMachine qm = new QueryMachine(index, method, category, bm25);
+		qm.processQuestionFile();
+	}
+	
+	public static boolean argparse(String[] args) {
+		/*
+		 * Possible arguments and combinations:
+		 * no args 	     = use the default values.
+		 * --lemma       = use lemmatization during indexing and querying. Can't be combined with "--none"
+		 * --none        = use no stemming/lemmatization during indexing and querying. Can't be combined with "--lemma"
+		 * --tfidf       = use the tfidf scoring algorithm instead of bm25.
+		 * --no-category = don't use the category when querying.
+		 */
+		for (String arg : args) {
+			if (arg.equals("--lemma")) {
+				if (methodSet) {
+					// Method was already set with "--lemma" or "--none".
+					return false;
 				}
-				writer.write("Result: " + result + " - Answer: " + answer + "\n");
-				writer.write("\n");
-			} catch (IOException e) {
-				System.out.print("Error querying documents: ");
-				e.printStackTrace();
+				method = "lemma";
+				inputDirectory = "lemma2";
+				methodSet = true;
+			} else if (arg.equals("--none")) {
+				if (methodSet) {
+					return false;
+				}
+				method = "none";
+				inputDirectory = "regular";
+				methodSet = true;
+			} else if (arg.equals("--tfidf")) {
+				bm25 = false;
+			} else if (arg.equals("--no-category")) {
+				category = false;
+			} else if (arg.equals("-h") || arg.equals("--help")) {
+				System.out.println("Watson is a Question Answering system for jeopardy questions, with answers being Wikipedia page titles.");
+				System.out.println();
+				System.out.println("The default run configuration is to include the category from questions.txt in the query, to use Stemming for indexing and query parsing, and to use BM25 scoring algorithm.");
+				System.out.println();
+				System.out.println("\t-h|--help\t\tList the possible command line arguments with a short description.");
+				System.out.println("\t--lemma\t\tIndex Wikipedia pages and parse queries using Lemmatization.");
+				System.out.println("\t--none\t\tIndex Wikipedia pages and parse queries without using Stemming or Lemmatization.");
+				System.out.println("\t--tfidf\t\tScore the documents using the tf-idf algorithm instead of BM25.");
+				System.out.println("\t--no-category\t\tDon't include the category of the answer as part of the query.");
+			} else {
+				return false;
 			}
 		}
-		double eval = mpr.calculate();
-		System.out.println("Evaluation: " + eval);
-		try {
-			writer.write("Total score: " + score + "\n");
-			writer.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		System.out.println("Total score: " + score);
+		return true;
 	}
-	
-	public static String query(String category, String qString, Index index, BufferedWriter writer, MeanReciprocalRank mpr, String answer) throws IOException {
-		Query q;
-		
-		// Add the category to the query and lowercase everything.
-		qString = category + " " + qString;
-		
-		// Remove the punctuation from the query.
-		qString = qString.toLowerCase();
-		qString = qString.replaceAll("\\.|,|!|\\?|&|'|\"|:|;|-", " ");
-//		qString = Lemmatization.removeStopWords(qString);
-//		qString = Lemmatization.lemma(qString);
-		
-		try {
-			q = new QueryParser("content", index.getAnalyzer()).parse(qString);
-			System.out.println("Query: " + qString);
-			writer.write("Query: " + qString + "\n");
-		} catch (ParseException e) {
-			System.out.print("Couldn't parse query: ");
-			e.printStackTrace();
-			return "";
-		}
-		
-		IndexReader reader = DirectoryReader.open(index.getIndex());
-		IndexSearcher searcher = new IndexSearcher(reader);
-		searcher.setSimilarity(new ClassicSimilarity());
-		mpr.setSearcher(searcher);
-		TopDocs docs = searcher.search(q, 100);
-		ScoreDoc[] hits = docs.scoreDocs;
-		mpr.add(hits, answer);
-		
-		if (hits.length > 0) {
-			Document d = searcher.doc(hits[0].doc);
-			return d.get("title");
-		} else {
-			return "No hit found :(";
-		}
-	}
-	
-
 }
