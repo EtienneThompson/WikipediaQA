@@ -2,6 +2,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -17,7 +18,9 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.search.similarities.TFIDFSimilarity;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.store.SimpleFSDirectory;
 
 /**
  * This class contains all of the information related to the index.
@@ -28,14 +31,10 @@ public class Index {
 	private Analyzer analyzer;
 	private Directory index;
 	private IndexWriter writer;
-	private String method;
 	private String inputDirectory;
-	private boolean bm25;
 	
 	public Index(String method, String inputDirectory, boolean bm25) {
-		this.method = method;
 		this.inputDirectory = inputDirectory;
-		this.bm25 = bm25;
 		if (method.equals("none")) {
 			this.analyzer = new StandardAnalyzer();
 		} else if (method.equals("lemma")) {
@@ -43,8 +42,11 @@ public class Index {
 		} else {
 			this.analyzer = new EnglishAnalyzer();
 		}
-		this.index = new RAMDirectory();
-		this.buildIndex();
+		try {
+			this.index = new SimpleFSDirectory(Paths.get("directory/"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public Analyzer getAnalyzer() {
@@ -59,7 +61,7 @@ public class Index {
 		return this.writer;
 	}
 	
-	private void buildIndex() {
+	public void buildIndex() {
 		IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
 		
 		try {

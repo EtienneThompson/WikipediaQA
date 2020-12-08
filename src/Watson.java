@@ -4,14 +4,18 @@ public class Watson {
 	private static String method = "stem";
 	private static boolean bm25 = true;
 	private static boolean methodSet = false;
+	private static boolean rebuild = false;
 
 	public static void main(String[] args) {
 		boolean valid = argparse(args);
 		if (!valid) {
-			System.out.println("Usage: watson [-h|--help] [--lemma|--none] [--tfidf] [--no-cateogry]");
+			System.out.println("Usage: watson [-h|--help] [--lemma|--none] [--tfidf] [--no-cateogry] [--rebuild]");
 			return;
 		}
 		Index index = new Index(method, inputDirectory, bm25);
+		if (rebuild) {
+			index.buildIndex();
+		}
 		QueryMachine qm = new QueryMachine(index, method, category, bm25);
 		qm.processQuestionFile();
 	}
@@ -24,6 +28,7 @@ public class Watson {
 		 * --none        = use no stemming/lemmatization during indexing and querying. Can't be combined with "--lemma"
 		 * --tfidf       = use the tfidf scoring algorithm instead of bm25.
 		 * --no-category = don't use the category when querying.
+		 * --rebuild	 = reindex the documents.
 		 */
 		for (String arg : args) {
 			if (arg.equals("--lemma")) {
@@ -45,6 +50,8 @@ public class Watson {
 				bm25 = false;
 			} else if (arg.equals("--no-category")) {
 				category = false;
+			} else if (arg.equals("--rebuild")) {
+				rebuild = true;
 			} else if (arg.equals("-h") || arg.equals("--help")) {
 				System.out.println("Watson is a Question Answering system for jeopardy questions, with answers being Wikipedia page titles.");
 				System.out.println();
@@ -55,6 +62,7 @@ public class Watson {
 				System.out.println("\t--none\t\tIndex Wikipedia pages and parse queries without using Stemming or Lemmatization.");
 				System.out.println("\t--tfidf\t\tScore the documents using the tf-idf algorithm instead of BM25.");
 				System.out.println("\t--no-category\t\tDon't include the category of the answer as part of the query.");
+				System.out.println("\t--rebuild\t\tReindex all of the documents.");
 			} else {
 				return false;
 			}
