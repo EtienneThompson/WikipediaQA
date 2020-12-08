@@ -29,15 +29,17 @@ public class Index {
 	
 	public Index(String method, String inputDirectory, boolean bm25) {
 		this.inputDirectory = inputDirectory;
+		String directoryPath = "directory/";
 		if (method.equals("none")) {
 			this.analyzer = new StandardAnalyzer();
 		} else if (method.equals("lemma")) {
 			this.analyzer = new WhitespaceAnalyzer();
+			directoryPath = "lemma-directory/";
 		} else {
 			this.analyzer = new EnglishAnalyzer();
 		}
 		try {
-			this.index = new SimpleFSDirectory(Paths.get("directory/"));
+			this.index = new SimpleFSDirectory(Paths.get(directoryPath));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

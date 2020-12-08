@@ -55,14 +55,16 @@ public class Watson {
 			} else if (arg.equals("-h") || arg.equals("--help")) {
 				System.out.println("Watson is a Question Answering system for jeopardy questions, with answers being Wikipedia page titles.");
 				System.out.println();
-				System.out.println("The default run configuration is to include the category from questions.txt in the query, to use Stemming for indexing and query parsing, and to use BM25 scoring algorithm.");
+				System.out.println("The default run configuration is to include the category from questions.txt in the query, to use Stemming");
+				System.out.println("for indexing and query parsing, and to use BM25 scoring algorithm.");
 				System.out.println();
 				System.out.println("\t-h|--help\t\tList the possible command line arguments with a short description.");
-				System.out.println("\t--lemma\t\tIndex Wikipedia pages and parse queries using Lemmatization.");
-				System.out.println("\t--none\t\tIndex Wikipedia pages and parse queries without using Stemming or Lemmatization.");
-				System.out.println("\t--tfidf\t\tScore the documents using the tf-idf algorithm instead of BM25.");
+				System.out.println("\t--lemma\t\t\tIndex Wikipedia pages and parse queries using Lemmatization.");
+				System.out.println("\t--none\t\t\tIndex Wikipedia pages and parse queries without using Stemming or Lemmatization.");
+				System.out.println("\t--tfidf\t\t\tScore the documents using the tf-idf algorithm instead of BM25.");
 				System.out.println("\t--no-category\t\tDon't include the category of the answer as part of the query.");
 				System.out.println("\t--rebuild\t\tReindex all of the documents.");
+				return false;
 			} else {
 				return false;
 			}

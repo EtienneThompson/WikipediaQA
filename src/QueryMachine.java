@@ -20,6 +20,8 @@ public class QueryMachine {
 	private Index index;
 	private MeanReciprocalRank mpr;
 	private BufferedWriter writer;
+	private IndexReader reader;
+	private IndexSearcher searcher;
 	private String method;
 	private boolean category;
 	private boolean bm25;
@@ -30,6 +32,17 @@ public class QueryMachine {
 		this.method = method;
 		this.category = category;
 		this.bm25 = bm25;
+		try {
+			this.reader = DirectoryReader.open(this.index.getIndex());
+			this.searcher = new IndexSearcher(reader);
+			this.mpr.setSearcher(this.searcher);
+			if (!this.bm25) {
+				System.out.println("Setting tfidf similarity");
+				searcher.setSimilarity(new ClassicSimilarity());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void processQuestionFile() {
@@ -118,19 +131,12 @@ public class QueryMachine {
 			return "";
 		}
 		
-		IndexReader reader = DirectoryReader.open(this.index.getIndex());
-		IndexSearcher searcher = new IndexSearcher(reader);
-		if (!this.bm25) {
-			System.out.println("Setting tfidf similarity");
-			searcher.setSimilarity(new ClassicSimilarity());
-		}
-		this.mpr.setSearcher(searcher);
-		TopDocs docs = searcher.search(q, 100);
+		TopDocs docs = this.searcher.search(q, 100);
 		ScoreDoc[] hits = docs.scoreDocs;
 		this.mpr.add(hits, answer);
 		
 		if (hits.length > 0) {
-			Document d = searcher.doc(hits[0].doc);
+			Document d = this.searcher.doc(hits[0].doc);
 			return d.get("title");
 		} else {
 			return "No hit found :(";
