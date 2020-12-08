@@ -1,3 +1,7 @@
+/**
+ * Main class for Watson Wikipedia Question Answering system.
+ * @author etiennethompson
+ */
 public class Watson {
 	private static boolean category = true;
 	private static String inputDirectory = "regular";
@@ -12,11 +16,15 @@ public class Watson {
 			System.out.println("Usage: watson [-h|--help] [--lemma|--none] [--tfidf] [--no-cateogry] [--rebuild]");
 			return;
 		}
+		// Create index object.
 		Index index = new Index(method, inputDirectory, bm25);
 		if (rebuild) {
+			// Rebuild the index if asked to.
 			index.buildIndex();
 		}
+		// Create the query object.
 		QueryMachine qm = new QueryMachine(index, method, category, bm25);
+		// Run the queries in the given file.
 		qm.processQuestionFile();
 	}
 	

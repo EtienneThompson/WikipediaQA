@@ -16,6 +16,10 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 
+/**
+ * Handles querying an index.
+ * @author etiennethompson
+ */
 public class QueryMachine {
 	private Index index;
 	private MeanReciprocalRank mpr;
@@ -26,6 +30,13 @@ public class QueryMachine {
 	private boolean category;
 	private boolean bm25;
 	
+	/**
+	 * Initialize the searching objects and MeanReciprocalRank object.
+	 * @param index
+	 * @param method
+	 * @param category
+	 * @param bm25
+	 */
 	public QueryMachine(Index index, String method, boolean category, boolean bm25) {
 		this.index = index;
 		this.mpr = new MeanReciprocalRank();
@@ -45,6 +56,9 @@ public class QueryMachine {
 		}
 	}
 	
+	/**
+	 * Process the file containing the questions and answers, and run the questions over the index.
+	 */
 	public void processQuestionFile() {
 		Scanner input;
 		try {
@@ -54,6 +68,7 @@ public class QueryMachine {
 			return;
 		}
 		
+		// Create an output file whose name is based on system.
 		try {
 			String filename = (this.bm25 ? "" : "tfidf_") + "" + (this.category ? "category_" : "") + "query_" + this.method + ".txt";
 			this.writer = new BufferedWriter(new FileWriter("resources/output/" + filename));
@@ -73,12 +88,14 @@ public class QueryMachine {
 			
 			try {
 				this.writer.write("Query: " + index + "\n");
+				// Run the question over the index.
 				String result = this.query(category, q, answer);
 				System.out.println("Result: " + result + " Answer: " + answer);
 				this.writer.write("Result: " + result + " - Answer: " + answer + "\n");
 				// Split to handle answers with multiple correct titles.
 				String[] parts = answer.split("\\|");
 				for (String part : parts) {
+					// Check if my answer is the same as any of the given answers.
 					if (result.equals(part)) {
 						this.writer.write("Correct!\n");
 						System.out.println("Correct!");
@@ -92,6 +109,7 @@ public class QueryMachine {
 				e.printStackTrace();
 			}
 		}
+		// Calculate the total MPR score after all queries have been processed.
 		double eval = this.mpr.calculate();
 		System.out.println("Evaluation: " + eval);
 		try {
@@ -103,15 +121,23 @@ public class QueryMachine {
 		System.out.println("Total score: " + score);
 	}
 
+	/**
+	 * Query the index for relevant documents and return the top result.
+	 * @param cat The category the query belongs to.
+	 * @param qString The query String.
+	 * @param answer The answer string.
+	 * @return The String title of the top ranked document.
+	 * @throws IOException The index cannot be queried.
+	 */
 	public String query(String cat, String qString, String answer) throws IOException {
 		Query q;
 		
-		// Add the category to the query and lowercase everything.
-		if (this.category) { 
+		if (this.category) {
+			// Add the category to the query if desired.
 			qString = cat + " " + qString;
 		}
 		
-		// Remove the punctuation from the query.
+		// Remove the punctuation from the query and lowercase query.
 		qString = qString.toLowerCase();
 		qString = qString.replaceAll("'", "");
 		qString = qString.replaceAll("\\.|,|!|\\?|&|\"|:|;|-|\\(|\\)", " ");
@@ -122,6 +148,7 @@ public class QueryMachine {
 		}
 			
 		try {
+			// Parse the query.
 			q = new QueryParser("content", this.index.getAnalyzer()).parse(qString);
 			System.out.println("Query: " + qString);
 			this.writer.write("Query: " + qString + "\n");
@@ -131,10 +158,12 @@ public class QueryMachine {
 			return "";
 		}
 		
+		// Search and rank the documents.
 		TopDocs docs = this.searcher.search(q, 100);
 		ScoreDoc[] hits = docs.scoreDocs;
 		this.mpr.add(hits, answer);
 		
+		// Return the top document.
 		if (hits.length > 0) {
 			Document d = this.searcher.doc(hits[0].doc);
 			return d.get("title");
