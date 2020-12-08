@@ -14,6 +14,8 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.TFIDFSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 
@@ -26,11 +28,23 @@ public class Index {
 	private Analyzer analyzer;
 	private Directory index;
 	private IndexWriter writer;
+	private String method;
+	private String inputDirectory;
+	private boolean bm25;
 	
-	public Index(String inputType) {
-		this.analyzer = new EnglishAnalyzer();
+	public Index(String method, String inputDirectory, boolean bm25) {
+		this.method = method;
+		this.inputDirectory = inputDirectory;
+		this.bm25 = bm25;
+		if (method.equals("none")) {
+			this.analyzer = new StandardAnalyzer();
+		} else if (method.equals("lemma")) {
+			this.analyzer = new WhitespaceAnalyzer();
+		} else {
+			this.analyzer = new EnglishAnalyzer();
+		}
 		this.index = new RAMDirectory();
-		this.buildIndex(inputType);
+		this.buildIndex();
 	}
 	
 	public Analyzer getAnalyzer() {
@@ -45,7 +59,7 @@ public class Index {
 		return this.writer;
 	}
 	
-	private void buildIndex(String inputType) {
+	private void buildIndex() {
 		IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
 		
 		try {
@@ -56,14 +70,14 @@ public class Index {
 		}
 		
 		// Get a list of all wiki page files to process.
-		File f = new File("resources/documents/" + inputType);
+		File f = new File("resources/documents/" + inputDirectory);
 		String[] pathnames = f.list();
 		
 		int count = 0;
 		for (String path : pathnames) {
 			Scanner input;
 			try {
-				input = new Scanner(new File("resources/documents/" + inputType + "/" + path));
+				input = new Scanner(new File("resources/documents/" + inputDirectory + "/" + path));
 				System.out.println(path);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -78,12 +92,9 @@ public class Index {
 					if (!title.equals("") && !content.equals("")) {
 						// If statement to not index empty strings.
 						try {
-							// Remove urls from the wikipedia page.
 							// Remove punctuation from the document.
-							// \\[.*\\]
 							content = content.replaceAll("\\.|,|'|\"|\\?|!|\\(|\\)|&||\\||:|;|/|$", "");
 							content = content.replaceAll("-|=", " ");
-							// Lemmatize the content of the document.
 							
 							this.addDoc(title, content);
 							this.writer.commit();

@@ -23,10 +23,13 @@ public class MeanReciprocalRank {
 	public void add(ScoreDoc[] hits, String answer) {
 		for (int i = 0; i < hits.length; i++) {
 			try {
-				if (this.searcher.doc(hits[i].doc).get("title").equals(answer)) {
-					this.answers[this.index] = i + 1;
-					this.index++;
-					return;
+				String[] parts = answer.split("\\|");
+				for (String part : parts) {
+					if (this.searcher.doc(hits[i].doc).get("title").equals(part)) {
+						this.answers[this.index] = i + 1;
+						this.index++;
+						return;
+					}
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -41,9 +44,9 @@ public class MeanReciprocalRank {
 		double summation = 0.0;
 		for (int index : this.answers) {
 			if (index != 0) {
-				summation += 1 / index;
+				summation += (1.0 / index);
 			}
 		}
-		return summation /= 100;
+		return summation / 100;
 	}
 }
