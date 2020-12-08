@@ -15,6 +15,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.TFIDFSimilarity;
 
 public class QueryMachine {
 	private Index index;
@@ -121,6 +122,7 @@ public class QueryMachine {
 		IndexReader reader = DirectoryReader.open(this.index.getIndex());
 		IndexSearcher searcher = new IndexSearcher(reader);
 		if (!this.bm25) {
+			System.out.println("Setting tfidf similarity");
 			searcher.setSimilarity(new ClassicSimilarity());
 		}
 		this.mpr.setSearcher(searcher);

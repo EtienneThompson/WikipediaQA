@@ -61,9 +61,6 @@ public class Index {
 	
 	private void buildIndex() {
 		IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
-		if (!this.bm25) { 
-			config.setSimilarity(new ClassicSimilarity());
-		}
 		
 		try {
 			this.writer = new IndexWriter(this.index, config);
