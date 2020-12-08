@@ -1,7 +1,6 @@
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -14,52 +13,75 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.search.similarities.ClassicSimilarity;
-import org.apache.lucene.search.similarities.TFIDFSimilarity;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.store.SimpleFSDirectory;
 
 /**
  * This class contains all of the information related to the index.
  * @author etiennethompson
- *
  */
 public class Index {
 	private Analyzer analyzer;
 	private Directory index;
 	private IndexWriter writer;
-	private String method;
 	private String inputDirectory;
-	private boolean bm25;
 	
+	/**
+	 * Initialize the Analyzer and Index.
+	 * @param method String representing which text processing algoirthm to use.
+	 * @param inputDirectory String representing which directory input files are located in.
+	 * @param bm25 boolean determining whether to use the bm25 scoring algorithm.
+	 */
 	public Index(String method, String inputDirectory, boolean bm25) {
-		this.method = method;
 		this.inputDirectory = inputDirectory;
-		this.bm25 = bm25;
+		// Determine the needed analyzer and path to the directory.
+		String directoryPath = "directory/";
 		if (method.equals("none")) {
 			this.analyzer = new StandardAnalyzer();
 		} else if (method.equals("lemma")) {
 			this.analyzer = new WhitespaceAnalyzer();
+			directoryPath = "lemma-directory/";
 		} else {
 			this.analyzer = new EnglishAnalyzer();
 		}
-		this.index = new RAMDirectory();
-		this.buildIndex();
+		try {
+			// Create the directory.
+			this.index = new SimpleFSDirectory(Paths.get(directoryPath));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
+	/**
+	 * Return the analyzer the index used.
+	 * @return the analyzer used to index the documents.
+	 */
 	public Analyzer getAnalyzer() {
 		return this.analyzer;
 	}
 	
+	/**
+	 * Return the Directory	where index is stored.
+	 * @return the Directory with the files.
+	 */
 	public Directory getIndex() {
 		return this.index;
 	}
 	
+	/**
+	 * Return the writer used to create the index.
+	 * @return the IndexWriter to write to the index.
+	 */
 	public IndexWriter getWriter() {
 		return this.writer;
 	}
 	
-	private void buildIndex() {
+	/**
+	 * Construct the index from files containing different Wikipedia page documents.
+	 * 
+	 * Documents are expected to be in the resources/documents/regular|lemma/ directory.
+	 */
+	public void buildIndex() {
 		IndexWriterConfig config = new IndexWriterConfig(this.analyzer);
 		
 		try {
@@ -73,6 +95,7 @@ public class Index {
 		File f = new File("resources/documents/" + inputDirectory);
 		String[] pathnames = f.list();
 		
+		// Go through all of the files in the directory.
 		int count = 0;
 		for (String path : pathnames) {
 			Scanner input;
@@ -87,8 +110,10 @@ public class Index {
 			String title = "";
 			String content = "";
 			while (input.hasNextLine()) {
+				// Read the next line.
 				String line = input.nextLine();
 				if (line.startsWith("[[")) {
+					// Page title encountered.
 					if (!title.equals("") && !content.equals("")) {
 						// If statement to not index empty strings.
 						try {
@@ -96,6 +121,7 @@ public class Index {
 							content = content.replaceAll("\\.|,|'|\"|\\?|!|\\(|\\)|&||\\||:|;|/|$", "");
 							content = content.replaceAll("-|=", " ");
 							
+							// Add it to the index.
 							this.addDoc(title, content);
 							this.writer.commit();
 						} catch (IOException e) {
@@ -107,6 +133,7 @@ public class Index {
 					title = line.replaceAll("\\[|\\]", "");
 					content = "";
 				} else {
+					// Concatenate document content.
 					content += line + " ";
 				}
 			}
@@ -115,6 +142,12 @@ public class Index {
 		
 	}
 	
+	/**
+	 * Create a new document and add it to the index.
+	 * @param title String representing the document title.
+	 * @param content String representing the document content.
+	 * @throws IOException if writer cannot write the document.
+	 */
 	private void addDoc(String title, String content) throws IOException {
 		Document d = new Document();
 		d.add(new StringField("title", title, Field.Store.YES));
