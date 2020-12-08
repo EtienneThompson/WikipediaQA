@@ -2,10 +2,35 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>csc-483-final-project</groupId>
   <artifactId>csc-483-final-project</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.0</version>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>Watson</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>Watson</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
@@ -16,7 +41,7 @@
       </plugin>
     </plugins>
   </build>
-  
+
   <dependencies>
     <dependency>
       <groupId>org.apache.lucene</groupId>
@@ -47,34 +72,34 @@
       <version>5.3.1</version>
       <scope>test</scope>
     </dependency>
-    
+
     <dependency>
 	  <groupId>edu.stanford.nlp</groupId>
 	  <artifactId>stanford-corenlp</artifactId>
 	  <version>4.0.0</version>
 	</dependency>
-    
+
     <dependency>
 	  <groupId>edu.stanford.nlp</groupId>
 	  <artifactId>stanford-corenlp</artifactId>
       <version>4.0.0</version>
       <classifier>models</classifier>
 	</dependency>
-	
+
 	<dependency>
 	  <groupId>edu.stanford.nlp</groupId>
 	  <artifactId>stanford-corenlp</artifactId>
       <version>4.0.0</version>
       <classifier>models-english</classifier>
 	</dependency>
-	
+
 	<dependency>
 	  <groupId>edu.stanford.nlp</groupId>
 	  <artifactId>stanford-corenlp</artifactId>
       <version>4.0.0</version>
       <classifier>models-english-kbp</classifier>
 	</dependency>
-	
+
 	<dependency>
 	  <groupId>org.slf4j</groupId>
 	  <artifactId>slf4j-api</artifactId>

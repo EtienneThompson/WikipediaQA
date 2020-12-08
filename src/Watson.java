@@ -27,7 +27,7 @@ public class Watson {
 		// Run the queries in the given file.
 		qm.processQuestionFile();
 	}
-	
+
 	public static boolean argparse(String[] args) {
 		/*
 		 * Possible arguments and combinations:

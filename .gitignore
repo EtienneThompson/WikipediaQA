@@ -25,5 +25,6 @@ hs_err_pid*
 # Wikipedia files
 resources/
 wiki*
-directory*/
-lemma-directory/*
+directory
+lemma-directory
+target
