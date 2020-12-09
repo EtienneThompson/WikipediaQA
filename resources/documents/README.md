@@ -1,0 +1,1 @@
+This is where documents the system should index are placed.
